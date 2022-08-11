@@ -9,71 +9,59 @@ public class WebCrawler {
     }
     
     public void crawl(String rootURL, int breakpoint) {
-    urlQueue.add(rootURL);
-    visitedURLs.add(rootURL);
+        urlQueue.add(rootURL);
+        visitedURLs.add(rootURL);
 
-    while(!urlQueue.isEmpty()){
+        while(!urlQueue.isEmpty()){
 
-        // remove the next url string from the queue to begin traverse.
-        String s = urlQueue.remove();
-        String rawHTML = "";
-        try{
-            // create url with the string.
-            URL url = new URL(s);
-            BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
-            String inputLine = in.readLine();
+            String s = urlQueue.remove();
+            String rawHTML = "";
+            try{
+                URL url = new URL(s);
+                BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
+                String inputLine = in.readLine();
 
-            // read every line of the HTML content in the URL
-            // and concat each line to the rawHTML string until every line is read.
-            while(inputLine  != null){
-                rawHTML += inputLine;
+                while(inputLine  != null){
+                    rawHTML += inputLine;
 
-                inputLine = in.readLine();
+                    inputLine = in.readLine();
+                }
+                in.close();
+            } catch (Exception e){
+                e.printStackTrace();
             }
-            in.close();
-        } catch (Exception e){
-            e.printStackTrace();
-        }
 
-        // create a regex pattern matching a URL
-        // that will validate the content of HTML in search of a URL.
-        String urlPattern = "(www|http:|https:)+[^\s]+[\\w]";
-        Pattern pattern = Pattern.compile(urlPattern);
-        Matcher matcher = pattern.matcher(rawHTML);
-
-        // Each time the regex matches a URL in the HTML,
-        // add it to the queue for the next traverse and the list of visited URLs.
-        breakpoint = getBreakpoint(breakpoint, matcher);
-
-        // exit the outermost loop if it reaches the breakpoint.
-        if(breakpoint == 0){
-            break;
+            String urlPattern = "(www|http:|https:)+[^\s]+[\\w]";
+            Pattern pattern = Pattern.compile(urlPattern);
+            Matcher matcher = pattern.matcher(rawHTML);
+            breakpoint = getBreakpoint(breakpoint, matcher);
+            if(breakpoint == 0){
+                break;
+            }
         }
     }
-}
 
-private int getBreakpoint(int breakpoint, Matcher matcher) {
-    while(matcher.find()){
-        String actualURL = matcher.group();
+    private int getBreakpoint(int breakpoint, Matcher matcher) {
+        while(matcher.find()){
+            String actualURL = matcher.group();
+            
+            if(!visitedURLs.contains(actualURL)){
+                visitedURLs.add(actualURL);
+                System.out.println("Website found with URL " + actualURL);
+                urlQueue.add(actualURL);
+            }
 
-        if(!visitedURLs.contains(actualURL)){
-            visitedURLs.add(actualURL);
-            System.out.println("Website found with URL " + actualURL);
-            urlQueue.add(actualURL);
+            if(breakpoint == 0){
+                break;
+            }
+            breakpoint--;
         }
-
-        // exit the loop if it reaches the breakpoint.
-        if(breakpoint == 0){
-            break;
-        }
-        breakpoint--;
+        return breakpoint;
     }
-    return breakpoint;
-}
 
-public static void main(String[] args) {
-    WebCrawler crawler = new WebCrawler();
-    String rootURL = "https://www.section.io/engineering-education/springboot-antmatchers/";
-    crawler.crawl(rootURL, 100);
-}
+    public static void main(String[] args) {
+        WebCrawler crawler = new WebCrawler();
+        String rootURL = "https://github.com/vaibhavraka/vaibhav.git";
+        crawler.crawl(rootURL, 100);
+    }
 }
